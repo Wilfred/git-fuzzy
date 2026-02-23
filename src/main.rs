@@ -191,6 +191,11 @@ fn checkout_commit(commit: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Check if a string could be a commit hash substring (only hex characters)
+fn is_possible_commit_hash(s: &str) -> bool {
+    !s.is_empty() && s.chars().all(|c| c.is_ascii_hexdigit())
+}
+
 /// Highlight the matched substring in a branch name
 fn highlight_match(branch_name: &str, needle: &str) -> String {
     if let Some(pos) = branch_name.find(needle) {
@@ -243,7 +248,11 @@ fn main() {
 
     match matches.len() {
         0 => {
-            // No branch matches, try to checkout as a commit
+            // No branch matches; only try as a commit if the argument could be a commit hash
+            if !is_possible_commit_hash(needle) {
+                eprintln!("No branches match '{}'.", needle);
+                exit(1);
+            }
             println!("No branches match '{}', trying as commit...", needle);
             if let Err(e) = checkout_commit(needle) {
                 eprintln!("Error: {}", e);
